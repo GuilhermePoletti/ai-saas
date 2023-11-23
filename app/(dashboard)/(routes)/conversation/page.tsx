@@ -5,6 +5,7 @@ import * as z from "zod";
 import { MessageSquare } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
+import { ChatCompletionRequestMessage } from "openai"; 
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Heading } from "@/components/heading";
@@ -19,26 +20,40 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 import { formSchema } from "./constants";
+import { useState } from "react";
 
 const ConversationPage = () => {
   const router = useRouter();
+  const [messages, setMessages] = useState<ChatCompletionRequestMessage[]>([]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      prompt: "",
-    },
+      prompt: ""
+    }
   });
 
   const isLoading = form.formState.isSubmitting;
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try{
+      const userMessage: ChatCompletionRequestMessage = {
+        role: "user",
+        content: values.prompt,
+      };
+      const newMessages = [...messages, userMessage];
 
+      const response = await axios.post("/api/conversation", {
+        messages: newMessages,
+      });
+      
+      setMessages((current) => [...current, userMessage, response.data]);
+
+      form.reset();
     } catch (error:any) {
       console.log(values);
     } finally {
-
+      router.refresh;
     }
   };
 
@@ -79,8 +94,7 @@ const ConversationPage = () => {
                         focus-visible:ring-0
                         focus-visible:ring-transparent"
                         disabled={isLoading}
-                        placeholder="How do I calculate the 
-                        raius of a circle?"
+                        placeholder="Como calcular o raio de um círculo?"
                         {...field}
                       />
                     </FormControl>
@@ -97,7 +111,13 @@ const ConversationPage = () => {
           </Form>
         </div>
         <div className="space-y-4 mt-4">
-          Conteúdo da Mensagem
+          <div className="flex flex-col-reverse gap-y-4">
+            {messages.map((message)=> (
+              <div key={message.content}>
+                {message.content}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
