@@ -7,8 +7,9 @@ import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 
+import { Select, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Heading } from "@/components/heading";
-import { 
+import {
   Form,
   FormControl,
   FormField,
@@ -23,8 +24,6 @@ import { Loader } from "@/components/loader";
 import { formSchema } from "./constants";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { UserAvatar } from "@/components/user-avatar";
-import { BotAvatar } from "@/components/bot-avatar";
 
 const ImagePage = () => {
   const router = useRouter();
@@ -33,18 +32,25 @@ const ImagePage = () => {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      prompt: ""
+      prompt: "",
+      amount: "1",
+      resolution: "512x512"
     }
   });
 
   const isLoading = form.formState.isSubmitting;
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    try{
-      const response = await axios.post("/api/conversation");
-      
+    try {
+      setImages([]);
+
+      const response = await axios.post("/api/image", values);
+
+      const urls = response.data.map((image: { url: string }) => image.url);
+
+      setImages(urls);
       form.reset();
-    } catch (error:any) {
+    } catch (error: any) {
       console.log(values);
     } finally {
       router.refresh;
@@ -88,10 +94,30 @@ const ImagePage = () => {
                         focus-visible:ring-0
                         focus-visible:ring-transparent"
                         disabled={isLoading}
-                        placeholder="Como calcular o raio de um círculo?"
+                        placeholder="Uma foto de um cavalo no campo"
                         {...field}
                       />
                     </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="amount"
+                render={({ field }) => (
+                  <FormItem className="col-span-12 lg:col-span-2">
+                    <Select
+                     disabled={isLoading}
+                     onValueChange={field.onChange}
+                     value={field.value}
+                     defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue defaultValue={field.value}/>
+                        </SelectTrigger>
+                      </FormControl>
+                    </Select>
                   </FormItem>
                 )}
               />
@@ -106,12 +132,12 @@ const ImagePage = () => {
         </div>
         <div className="space-y-4 mt-4">
           {isLoading && (
-            <div className="p-8 rounded-lg w-full flex items-center justify-center bg-muted">
-              <Loader/>
+            <div className="p-20">
+              <Loader />
             </div>
           )}
           {images.length === 0 && !isLoading && (
-            <Empty label="Nenhuma conversa iniciada." />
+            <Empty label="Nenhuma imagem gerada." />
           )}
           <div>
             Images will be render heres
