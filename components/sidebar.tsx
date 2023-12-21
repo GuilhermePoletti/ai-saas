@@ -15,6 +15,7 @@ import {
     Music,
     Settings
 } from "lucide-react";
+import { FreeCounter } from "./free-counter";
 
 const montserrat = Montserrat({
     weight:"600",
@@ -70,7 +71,7 @@ interface SidebarProps {
 };
 
 const Sidebar = ({
-    apiLimitCount
+    apiLimitCount = 0
 }: SidebarProps) => {
     const pathname = usePathname();
     return ( 
@@ -106,6 +107,9 @@ const Sidebar = ({
 
                 </div>
             </div>
+            <FreeCounter 
+                apiLimitCount={apiLimitCount}
+            />
         </div>
      );
 }
